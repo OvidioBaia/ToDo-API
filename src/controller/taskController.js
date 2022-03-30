@@ -1,5 +1,6 @@
 const taskModel = require('../model/task');
 const mysql = require('mysql');
+const moment = require('moment');
 
 async function  execSQLQuery(sqlQry, res){
   const connection = mysql.createConnection({
@@ -10,21 +11,33 @@ async function  execSQLQuery(sqlQry, res){
   });
  
   connection.query(sqlQry, async function(error, results, fields){
-      if(error) 
+    console.log(sqlQry);
+      if(error){ 
         res.json(error);
-      else
+      }
+      else{
+        const response = results.length > 0 ?  results.map((r)=>{
+          r.date = moment(r.date).format('DD-MM-YYYY')
+        }
+        ): results
         await  res.json(results);
+      }
       connection.end();
       console.log('executou!');
   });
 }
 exports.create = async (req, res) =>{
-    const nome = req.body.nome;
-    await execSQLQuery(`INSERT INTO tasks(nome) VALUES('${nome}')`, res);
+    const {titulo,description, date:dataRecieve} = req.body;
+    const date = moment(dataRecieve).format('YYYY-MM-DD')
+  
+    await execSQLQuery(`INSERT INTO tasks(titulo, description, date) VALUES('${titulo}', '${description}', '${date}' )`, res);
 };
 
 exports.show = async (req, res) =>{
     await execSQLQuery('SELECT * FROM tasks', res);
+};
+exports.video = async (req, res) =>{
+  await execSQLQuery('SELECT * FROM videos', res);
 };
 
 // exports.details = async (req,res)=>{
@@ -49,14 +62,9 @@ exports.show = async (req, res) =>{
 //     }
 // }
 
-// exports.delete = async (req, res) =>{
-//     try {
-//         const usuario = await userModel.deleteOne(req.body.id);
-//        // console.log(usuario)
-//         res.status(200).send("Usuario deletado com sucesso");
-//     } catch (error) {
-//         console.log(erro)
-//         res.send(erro);
-//     }
-//    // res.send('Olá! Teste ao Controller');
-// };
+exports.delete = async (req, res) =>{
+  const { id } = req.params;
+  console.log(id);
+  await execSQLQuery(`DELETE FROM tasks WHERE id = ${id}`, res);
+  // await execSQLQuery('SELECT * FROM tasks', res);
+};
